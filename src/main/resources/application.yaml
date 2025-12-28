@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: qr_access_control
