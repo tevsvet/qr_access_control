@@ -1,4 +1,4 @@
-package com.program.qr_access_control;
+package com.program.qraccess;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
