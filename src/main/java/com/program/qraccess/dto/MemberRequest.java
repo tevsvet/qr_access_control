@@ -1,13 +1,13 @@
 package com.program.qraccess.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
-import lombok.Data;
 
-@Data
-@Builder
-public class MemberRequest {
+public record MemberRequest(
+        @NotBlank(message = "First name must not be blank")
+        String firstName,
 
-    @NotBlank(message = "Full name must not be blank")
-    private String fullName;
-}
+        @NotBlank(message = "Last name must not be blank")
+        String lastName,
+
+        String middleName
+) {}

@@ -2,9 +2,13 @@ package com.program.qraccess.service;
 
 import com.program.qraccess.dto.MemberRequest;
 import com.program.qraccess.dto.MemberResponse;
+import com.program.qraccess.dto.UpdateMemberRequest;
+import com.program.qraccess.mapper.MemberMapper;
 import com.program.qraccess.model.Member;
 import com.program.qraccess.exception.MemberNotFoundException;
+import com.program.qraccess.model.QrCode;
 import com.program.qraccess.repository.MemberRepository;
+import com.program.qraccess.repository.QrCodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -20,58 +23,49 @@ import java.util.stream.Collectors;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-
-    @Transactional
-    public Member processQr(UUID qrUuid) {
-        log.info("Processing QR scan: {}", qrUuid);
-
-        Member member = memberRepository.findByQrUuid(qrUuid)
-                .orElseThrow(() -> new MemberNotFoundException("Member not found"));
-
-        UUID newQr = UUID.randomUUID();
-        member.setQrUuid(newQr);
-
-        log.info("QR for member {} updated to {}", member.getId(), newQr);
-
-        return member;
-    }
+    private final QrCodeRepository qrCodeRepository;
+    private final MemberMapper memberMapper;
 
     @Transactional(readOnly = true)
     public List<MemberResponse> getAll() {
         return memberRepository.findAll()
                 .stream()
-                .map(this::toResponce)
-                .collect(Collectors.toList());
+                .map(memberMapper::toResponse)
+                .toList();
     }
 
     @Transactional
     public MemberResponse create(MemberRequest request) {
-        log.info("Creating member with fullName = {}", request.getFullName());
+        log.info("Creating new member");
 
-        Member member = Member.builder()
-                .fullName(request.getFullName())
-                .qrUuid(UUID.randomUUID())
-                .build();
-
+        Member member = memberMapper.toEntity(request);
         memberRepository.save(member);
+
+        QrCode qrCode = QrCode.builder()
+                .member(member)
+                .uuid(UUID.randomUUID())
+                .build();
+        qrCodeRepository.save(qrCode);
 
         log.info("Member created with id = {}", member.getId());
 
-        return toResponce(member);
+        return memberMapper.toResponse(member);
     }
 
     @Transactional
-    public MemberResponse update(Long id, MemberRequest request) {
-        log.info("Updating member with id = {}", id);
+    public MemberResponse update(Long id, UpdateMemberRequest request) {
+        log.info("Updating full name of member with id = {}", id);
 
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new MemberNotFoundException("Member not found"));
 
-        member.setFullName(request.getFullName());
+        request.firstName().ifPresent(member::changeFirstName);
+        request.lastName().ifPresent(member::changeLastName);
+        request.middleName().ifPresent(name -> member.changeMiddleName(name.isBlank() ? null : name));
 
-        log.info("Member with id = {} updated", id);
+        log.info("Member full name updated");
 
-        return toResponce(member);
+        return memberMapper.toResponse(member);
     }
 
     @Transactional
@@ -81,16 +75,10 @@ public class MemberService {
         if (!memberRepository.existsById(id)) {
             throw new MemberNotFoundException("Member not found");
         }
+
+        qrCodeRepository.deleteByMemberId(id);
         memberRepository.deleteById(id);
 
         log.info("Member with id = {} deleted", id);
-    }
-
-    private MemberResponse toResponce(Member member) {
-        return MemberResponse.builder()
-                .id(member.getId())
-                .fullName(member.getFullName())
-                .qrUuid(member.getQrUuid())
-                .build();
     }
 }

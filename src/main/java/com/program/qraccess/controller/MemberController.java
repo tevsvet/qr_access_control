@@ -2,6 +2,7 @@ package com.program.qraccess.controller;
 
 import com.program.qraccess.dto.MemberRequest;
 import com.program.qraccess.dto.MemberResponse;
+import com.program.qraccess.dto.UpdateMemberRequest;
 import com.program.qraccess.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +28,10 @@ public class MemberController {
         return ResponseEntity.ok(memberService.create(request));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<MemberResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody MemberRequest request) {
+            @RequestBody UpdateMemberRequest request) {
         return ResponseEntity.ok(memberService.update(id, request));
     }
 
