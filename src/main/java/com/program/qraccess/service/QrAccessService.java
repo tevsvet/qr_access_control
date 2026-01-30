@@ -5,8 +5,8 @@ import com.program.qraccess.dto.ScanQrResponse;
 import com.program.qraccess.exception.MemberNotFoundException;
 import com.program.qraccess.exception.QrCodeNotFoundException;
 import com.program.qraccess.mapper.QrMapper;
-import com.program.qraccess.model.Member;
-import com.program.qraccess.model.QrCode;
+import com.program.qraccess.model.MemberEntity;
+import com.program.qraccess.model.QrCodeEntity;
 import com.program.qraccess.repository.MemberRepository;
 import com.program.qraccess.repository.QrCodeRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QrAccessService {
 
-    private final MemberRepository memberRepository;
     private final QrCodeRepository qrCodeRepository;
     private final QrMapper qrMapper;
 
@@ -30,13 +29,12 @@ public class QrAccessService {
         UUID uuid = request.uuid();
         log.info("QR scan request: {}", uuid);
 
-        QrCode qrCode = qrCodeRepository.findByUuid(uuid)
+        QrCodeEntity qrCode = qrCodeRepository.findByUuid(uuid)
                 .orElseThrow(() -> new QrCodeNotFoundException("QR code not found"));
 
-        Member member = memberRepository.findById(qrCode.getMemberId())
-                .orElseThrow(() -> new MemberNotFoundException("Member not found"));
+        MemberEntity member = qrCode.getMember();
 
-        qrCode.changeUuid(UUID.randomUUID());
+        qrCode.setUuid(UUID.randomUUID());
 
         log.info("Access granted for member with id = {}. QR rotated", member.getId());
 

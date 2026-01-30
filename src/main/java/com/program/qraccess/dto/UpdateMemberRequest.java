@@ -1,9 +1,14 @@
 package com.program.qraccess.dto;
 
-import java.util.Optional;
+import com.program.qraccess.validation.NotBlankIfPresent;
 
 public record UpdateMemberRequest(
-        Optional<String> firstName,
-        Optional<String> lastName,
-        Optional<String> middleName
+
+        @NotBlankIfPresent(message = "First name cannot be blank if provided")
+        String firstName,
+
+        @NotBlankIfPresent(message = "Last name cannot be blank if provided")
+        String lastName,
+
+        String middleName
 ) {}

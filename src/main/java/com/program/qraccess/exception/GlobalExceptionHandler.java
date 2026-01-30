@@ -14,28 +14,9 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MemberNotFoundException.class)
-    public ResponseEntity<ApiError> handleMemberNotFound(MemberNotFoundException ex,
+    @ExceptionHandler({MemberNotFoundException.class, QrCodeNotFoundException.class})
+    public ResponseEntity<ApiError> handleNotFound(RuntimeException ex,
                                                          HttpServletRequest request) {
-
-        log.warn("NotFound: {}", ex.getMessage(), ex);
-
-        ApiError error = new ApiError(
-                Instant.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
-
-    @ExceptionHandler(QrCodeNotFoundException.class)
-    public ResponseEntity<ApiError> handleMemberNotFound(QrCodeNotFoundException ex,
-                                                         HttpServletRequest request) {
-
-        log.warn("NotFound: {}", ex.getMessage(), ex);
 
         ApiError error = new ApiError(
                 Instant.now(),
@@ -52,13 +33,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex,
                                                      HttpServletRequest request) {
 
-        log.warn("Validation failed: {}", ex.getMessage(), ex);
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation failed");
+
+        log.warn("Validation failed: {}", ex.getMessage());
 
         ApiError error = new ApiError(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                ex.getMessage(),
+                message,
                 request.getRequestURI()
         );
 
@@ -69,7 +55,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex,
                                                                      HttpServletRequest request) {
 
-        log.warn("Invalid argument: {}", ex.getMessage(), ex);
+        log.warn("Invalid argument: {}", ex.getMessage());
 
         ApiError error = new ApiError(
                 Instant.now(),
@@ -85,7 +71,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAny(Exception ex, HttpServletRequest request) {
 
-        log.warn("Unexpected error: {}", ex.getMessage(), ex);
+        log.error("Unexpected error", ex);
 
         ApiError error = new ApiError(
                 Instant.now(),
