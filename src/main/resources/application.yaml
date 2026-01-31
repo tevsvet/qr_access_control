@@ -1,3 +1,15 @@
 spring:
-  application:
-    name: qr_access_control
+  datasource:
+    url: jdbc:postgresql://localhost:5432/qr_db
+    username: qr_user
+    password: qr_pass
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  logging:
+    level:
+      root: INFO
+      com.program.qraccess: INFO
+      org.hibernate.SQL: WARN
+      org.springframework.web: WARN
